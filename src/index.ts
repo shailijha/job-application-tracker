@@ -1,10 +1,15 @@
 import express from "express"
-import error = require("node:console");
-import console = require("node:console");
 const app = express();
 app.use(express.json());
 const port = 3000;
-const applications = [
+const applicationStatus = ["applied", "interviewing", "offer", "rejected"];
+type Application = {
+    id: number;
+    company: string;
+    role: string;
+    status: (typeof applicationStatus)[number];
+};
+const applications: Application[] = [
   { id: 1, company: "Capital One", role: "Software Engineer", status: "applied" },
   { id: 2, company: "Fidelity", role: "Front-End Developer", status: "interviewing" },
 ];
@@ -32,10 +37,12 @@ app.get("/applications/:id", (req, res) => {
 });
 app.post("/applications", (req, res) => {
     const {company, role, status } = req.body;
-    if(!company || ! role) {
+    if(!company || !role) {
         return res.status(400).json({error: "Company and/or role are required"});
     }
-
+    if(status && !applicationStatus.includes(status)) {
+        return res.status(400).json({error: `Status is invalid. It needs to be one of these values: ${applicationStatus.join(", ")}`});
+    }
     const newApplication = {
         id: applications.length+1, company, role, status: status || "applied"
     };
@@ -45,8 +52,8 @@ app.post("/applications", (req, res) => {
 app.patch("/applications/:id", (req, res) => {
     const id = Number(req.params.id);
     const requestBodyStatus = req.body.status;
-    if(!requestBodyStatus) {
-        return res.status(400).json({error: "Status cannot be empty"});
+    if(!applicationStatus.includes(requestBodyStatus)) {
+        return res.status(400).json({error: `Status is invalid. It needs to be one of these values: ${applicationStatus.join(", ")}`});
     }
 
     const application = applications.find((a) => a.id === id);

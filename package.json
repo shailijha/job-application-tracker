@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "name": "job-tracker-api",
   "version": "1.0.0",
   "description": "",

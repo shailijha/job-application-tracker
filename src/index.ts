@@ -3,7 +3,7 @@ import { pool } from "./db.js"
 const app = express();
 app.use(express.json());
 const port = 3000;
-const applicationStatus = ["applied", "interviewing", "offer", "rejected"];
+const applicationStatus = ["applied", "interviewing", "offer", "rejected"] as const;
 type Application = {
     id: number;
     company: string;
@@ -42,6 +42,10 @@ app.get("/applications", async (_req, res) => {
 // });
 app.get("/applications/:id", async (req, res) => {
     const id = Number(req.params.id)
+    if(id <= 0 || !Number.isInteger(id)) {
+        return res.status(400).json({ error: "Please provide a valid id" })
+    }
+
     const application = await pool.query("SELECT * FROM applications WHERE id = $1",[id]);
 
     if(application.rows.length == 0) {

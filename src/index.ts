@@ -53,19 +53,31 @@ app.get("/applications/:id", async (req, res) => {
     }
     res.json(application.rows[0]); 
 })
-app.post("/applications", (req, res) => {
+// app.post("/applications", (req, res) => {
+//     const {company, role, status } = req.body;
+//     if(!company || !role) {
+//         return res.status(400).json({error: "Company and/or role are required"});
+//     }
+//     if(status && !applicationStatus.includes(status)) {
+//         return res.status(400).json({error: `Status is invalid. It needs to be one of these values: ${applicationStatus.join(", ")}`});
+//     }
+//     const newApplication = {
+//         id: applications.length+1, company, role, status: status || "applied"
+//     };
+//     applications.push(newApplication);
+//     res.status(201).json(newApplication);
+// });
+app.post("/applications", async (req, res) => {
     const {company, role, status } = req.body;
-    if(!company || !role) {
+    if(!company || !role ) {
         return res.status(400).json({error: "Company and/or role are required"});
     }
     if(status && !applicationStatus.includes(status)) {
         return res.status(400).json({error: `Status is invalid. It needs to be one of these values: ${applicationStatus.join(", ")}`});
     }
-    const newApplication = {
-        id: applications.length+1, company, role, status: status || "applied"
-    };
-    applications.push(newApplication);
-    res.status(201).json(newApplication);
+    const result = await pool.query("INSERT INTO applications (COMPANY, ROLE, STATUS) VALUES ($1, $2, $3) RETURNING *", [company, role, status || "applied"]);
+    console.log(result);
+    res.status(201).json(result.rows[0]);
 });
 app.patch("/applications/:id", (req, res) => {
     const id = Number(req.params.id);

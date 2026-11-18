@@ -1,5 +1,6 @@
 import express from "express"
 import { pool } from "./db.js"
+import { error } from "node:console";
 const app = express();
 app.use(express.json());
 const port = 3000;
@@ -76,24 +77,40 @@ app.post("/applications", async (req, res) => {
         return res.status(400).json({error: `Status is invalid. It needs to be one of these values: ${applicationStatus.join(", ")}`});
     }
     const result = await pool.query("INSERT INTO applications (COMPANY, ROLE, STATUS) VALUES ($1, $2, $3) RETURNING *", [company, role, status || "applied"]);
-    console.log(result);
     res.status(201).json(result.rows[0]);
 });
-app.patch("/applications/:id", (req, res) => {
+// app.patch("/applications/:id", (req, res) => {
+//     const id = Number(req.params.id);
+//     const requestBodyStatus = req.body.status;
+//     if(!applicationStatus.includes(requestBodyStatus)) {
+//         return res.status(400).json({error: `Status is invalid. It needs to be one of these values: ${applicationStatus.join(", ")}`});
+//     }
+
+//     const application = applications.find((a) => a.id === id);
+
+//     if(!application) {
+//         return res.status(404).json({ error: "Application not found" });
+//     }
+
+//     application.status = requestBodyStatus;
+//     res.json(application);
+// });
+app.patch("/applications/:id", async (req, res) => {
     const id = Number(req.params.id);
     const requestBodyStatus = req.body.status;
+    if(id <= 0 || !Number.isInteger(id)) {
+        return res.status(400). json({error: 'Please provide a valid ID'});
+    }
+
     if(!applicationStatus.includes(requestBodyStatus)) {
         return res.status(400).json({error: `Status is invalid. It needs to be one of these values: ${applicationStatus.join(", ")}`});
     }
 
-    const application = applications.find((a) => a.id === id);
-
-    if(!application) {
+    const result = await pool.query("UPDATE applications SET status = $1 WHERE id = $2 RETURNING *", [requestBodyStatus, id]);
+    if(result.rowCount === 0) {
         return res.status(404).json({ error: "Application not found" });
     }
-
-    application.status = requestBodyStatus;
-    res.json(application);
+    res.json(result.rows[0]);
 });
 app.delete("/applications/:id", (req, res) => {
     const id = Number(req.params.id);
